@@ -1,0 +1,24 @@
+# create a list of databases of interest, e.g.
+ls ../*/*.db > visit_db_list.txt
+
+# create symlinks in this directory for the dbs
+./gen_db_symlinks.sh
+
+# create the ss_script.sh file for each db
+# also add the relevant lines from ss_script_header.txt required to run on cuillin
+./gen_ss_script.sh
+
+# put all ss_script.sh files into a slurm script for batch submission
+# the default info in slurm_header.txt assumes 1 job per core
+# use command line arg to select memory per task
+./gen_slurm.sh
+
+# the resulting file test.slurm must be renamed and SBATCH details filled out:
+# jobname
+# ntasks
+# total memory
+# run time
+# some of the tasks might need to be deleted to fit within the desired ntasks
+
+# then submit the .slurm file
+sbatch .slurm

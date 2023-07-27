@@ -1,0 +1,2 @@
+. /usr/local/anaconda/3.9/etc/profile.d/conda.sh
+conda activate rubin
