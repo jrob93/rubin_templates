@@ -46,20 +46,20 @@ night_max = 365
 
 
 # set nside for analysis metric (use higher resolution when removing no-template images later)
-nside = 32
-# nside = 256
+# nside = 32
+nside = 256
 s_hp = maf.HealpixSlicer(nside=nside)
 
 # make a time slicer
 nights = np.arange(night_min, night_max+1, 1)
-s_t = maf.OneDSlicer(sliceColName="night", bins = nights)
+s_t = maf.OneDSlicer(slice_col_name="night", bins = nights)
 
 
 # In[5]:
 
 
 # set path for metric output files
-# save_dir = "remove_no_template_results_{}".format(nside)
+save_dir = "remove_no_template_results_{}".format(nside)
 
 
 # In[6]:
@@ -121,7 +121,8 @@ else:
 # set up some filenames
 opsim_fname = year1_fname
 print(opsim_fname)
-opsdb = maf.OpsimDatabase(opsim_fname)
+# opsdb = maf.OpsimDatabase(opsim_fname)
+opsdb = opsim_fname
 runName = os.path.split(opsdb)[-1].replace('.db', '')
 print(runName)
 
@@ -130,12 +131,8 @@ print(runName)
 
 
 # template generation timescales to test
-tscales = [28,28*4,28*6] # 3.37 GB, ~15 - 20 mins runtime
-# tscales = [7,14] # 15.23 GB total, +75 mins runtime
-# tscales = [3] # 32.93 GB total, +110 mins runtime
-# tscales = [1]
-# tscales = [7,14,28,28*4,28*6]
-# tscales = [3,7,14,28,28*4,28*6]
+# tscales = [28,28*4,28*6]
+tscales = [7]
 
 # store the timescale and template generation nights in a dict
 template_timescales = {}
@@ -148,16 +145,7 @@ for tscale in tscales:
 
     template_timescales[str(tscale)] = template_nights
 
-
-
-# In[12]:
-
-
-count = 0
-for t in template_timescales.keys():
-    count+=len(template_timescales[t])
-    print(t,len(template_timescales[t]))
-print(count)
+template_timescales
 
 
 # # Remove visits without templates using Peter's code
@@ -166,7 +154,7 @@ print(count)
 #
 # Peter's code assumes that a template will be generated once, on a given night.
 
-# In[13]:
+# In[41]:
 
 
 # new base class. We might consider moving this into BaseMetric, or maybe doing this in the slicer instead.
@@ -177,43 +165,43 @@ class BaseTemplateMetric(maf.metrics.BaseMetric):
                 col=None,
                 n_visits_for_template=3., # note that this is float
                 night_template_min=182,
-                mjdCol='observationStartMJD',
-                nightCol='night',
-                filterCol='filter',
+                mjd_col='observationStartMJD',
+                night_col='night',
+                filter_col='filter',
                  seeing_ratio=2.0, m5_range=0.5,
-                 seeingCol='seeingFwhmEff', m5Col='fiveSigmaDepth',
+                 seeing_col='seeingFwhmEff', m5_col='fiveSigmaDepth',
                  **kwargs):
         if col is None:
             col = []
         else:
             col = [col]
-        col += [mjdCol, nightCol, filterCol]
+        col += [mjd_col, night_col, filter_col]
         super().__init__(col=col, **kwargs)
         self.n_visits_for_template = n_visits_for_template
         self.night_template_min = night_template_min
-        self.mjdCol = mjdCol
-        self.nightCol = nightCol
-        self.filterCol = filterCol
+        self.mjd_col = mjd_col
+        self.night_col = night_col
+        self.filter_col = filter_col
 
-        self.seeingCol = seeingCol
-        self.m5Col = m5Col
+        self.seeing_col = seeing_col
+        self.m5_col = m5_col
         self.seeing_ratio = seeing_ratio
         self.m5_range = m5_range
 
         # this snippet (from Lynne nb) is required to set the columns that need to be called when running the metric
-        if 'metricName' in kwargs:
-            self.metricName = kwargs['metricName']
-            del kwargs['metricName']
+        if 'metric_name' in kwargs:
+            self.metric_name = kwargs['metric_name']
+            del kwargs['metric_name']
         else:
-            self.metricName = 'BaseTemplateMetric'
-        super().__init__(col=[self.mjdCol, self.seeingCol, self.m5Col, self.nightCol, self.filterCol],
-                         metricName=self.metricName, **kwargs)
+            self.metric_name = 'BaseTemplateMetric'
+        super().__init__(col=[self.mjd_col, self.seeing_col, self.m5_col, self.night_col, self.filter_col],
+                         metric_name=self.metric_name, **kwargs)
 
         print("night_template_min = {}, seeing_ratio = {}, m5_range = {}".format(self.night_template_min,self.seeing_ratio,self.m5_range))
 
     def _remove_no_template_visits(self, dataSlice):
 
-        dataSlice.sort(order=self.mjdCol)
+        dataSlice.sort(order=self.mjd_col)
 
         n_visits = int(self.n_visits_for_template) # number of good images required for template
 
@@ -223,10 +211,10 @@ class BaseTemplateMetric(maf.metrics.BaseMetric):
         template_img_indx = np.ones(dataSlice.size, dtype=bool) # images used for templates
 
         # template images must have been taken before the generation date
-        template_time = np.where(dataSlice[self.nightCol] < self.night_template_min,
+        template_time = np.where(dataSlice[self.night_col] < self.night_template_min,
                         True, False)
         # science images can only be counted after the generation date
-        image_time = np.where(dataSlice[self.nightCol] > self.night_template_min,
+        image_time = np.where(dataSlice[self.night_col] > self.night_template_min,
                         True, False)
         ### should use a greater than sign for nights here? Or allow leeway for template generation time?
 
@@ -237,10 +225,10 @@ class BaseTemplateMetric(maf.metrics.BaseMetric):
 #         print(self.night_template_min,len(dataSlice),sum(template_img_indx),sum(has_template_indx))
 
         # look at each dataslice by filter, because template images must be in the same filter
-        for filtername in np.unique(dataSlice[self.filterCol]):
+        for filtername in np.unique(dataSlice[self.filter_col]):
 
             # mask for each filter
-            infilt = np.where(dataSlice[self.filterCol] == filtername)[0] # index zero required to get just the mask (or use True, False arguments like Lynne above)
+            infilt = np.where(dataSlice[self.filter_col] == filtername)[0] # index zero required to get just the mask (or use True, False arguments like Lynne above)
             # mask for template images in the filter
             infilt_templates = infilt & template_time[infilt]
 
@@ -250,13 +238,13 @@ class BaseTemplateMetric(maf.metrics.BaseMetric):
                 continue
 
             # Find the best seeing and depth in the available template images
-            bench_seeing = np.min(dataSlice[infilt_templates][self.seeingCol])
-            bench_m5 = np.max(dataSlice[infilt_templates][self.m5Col])
+            bench_seeing = np.min(dataSlice[infilt_templates][self.seeing_col])
+            bench_m5 = np.max(dataSlice[infilt_templates][self.m5_col])
 
             # define the masks for template visits in this filter meeting the seeing/depth requirements
-            seeing_ok = np.where(dataSlice[infilt_templates][self.seeingCol]/bench_seeing < self.seeing_ratio,
+            seeing_ok = np.where(dataSlice[infilt_templates][self.seeing_col]/bench_seeing < self.seeing_ratio,
                                 True, False)
-            m5_ok = np.where(bench_m5 - dataSlice[infilt_templates][self.m5Col] < self.m5_range,
+            m5_ok = np.where(bench_m5 - dataSlice[infilt_templates][self.m5_col] < self.m5_range,
                             True, False)
 
             # define list of images that are suitable for generating templates by removing "bad" visits
@@ -274,7 +262,8 @@ class BaseTemplateMetric(maf.metrics.BaseMetric):
         return has_template_indx, template_img_indx
 
 
-# In[14]:
+# In[42]:
+
 
 
 # OK, now let's write a function that takes a bunch of observations in,
@@ -286,16 +275,17 @@ class HasTemplateIndx(BaseTemplateMetric):
     This then allows you to run metrics directly on the visits of the dataslice
     that had templates and could generate alerts
     """
-    def __init__(self, col='observationId', metricDtype="object", **kwargs):
-        super().__init__(col=col, metricDtype=metricDtype, **kwargs)
+    def __init__(self, col='observationId', metric_dtype="object", **kwargs):
+        super().__init__(col=col, metric_dtype=metric_dtype, **kwargs)
         self.idCol = col
-    def run(self, dataSlice, slicePoint=None):
+    def run(self, dataSlice, slice_point=None):
         has_template_indx, template_img_indx = self._remove_no_template_visits(dataSlice) # get the mask of science images
         dataSlice = dataSlice[has_template_indx] # apply the mask to the dataSlice
         return dataSlice[self.idCol]
 
 
-# In[15]:
+# In[52]:
+
 
 
 def remove_no_templates(data_in, nside=32, id_col='observationId',
@@ -314,14 +304,14 @@ def remove_no_templates(data_in, nside=32, id_col='observationId',
     print("night_template_min = {}".format(metric.night_template_min))
     sql=None
     bundle = maf.MetricBundle(metric, slicer, sql)
-    mbg = maf.MetricBundleGroup([bundle], None, saveEarly=False,
+    mbg = maf.MetricBundleGroup([bundle], None, save_early=False,
                                 verbose=False)
-    mbg.runCurrent(None, simData=data_in)
+    mbg.run_current(None, sim_data=data_in)
 
     # we retrieve an array with the id_col (observationId) of every single visit
     # that had at least one constituent healpixel with a template
     # An id_col value can appear multiple times as there are multiple healpixels within each visit
-    all_vals = np.concatenate(bundle.metricValues.data[~bundle.metricValues.mask])
+    all_vals = np.concatenate(bundle.metric_values.data[~bundle.metric_values.mask])
 
     # we find all unique id_col, these are the visits that had some form of template
     # we count the number of each unique id_col, this is the number of healpixels within the visit that had templates
@@ -343,7 +333,7 @@ def remove_no_templates(data_in, nside=32, id_col='observationId',
 
 # # Run metrics on dataslice directly
 
-# In[16]:
+# In[44]:
 
 
 class doAllTemplateMetrics(BaseTemplateMetric):
@@ -355,7 +345,7 @@ class doAllTemplateMetrics(BaseTemplateMetric):
         super().__init__(col=col, **kwargs)
         self.idCol = col
 
-    def run(self, dataSlice, slicePoint=None):
+    def run(self, dataSlice, slice_point=None):
 
         # run the template checking code to create a dataSlice with only the visits with templates
         has_template_indx, template_img_indx = self._remove_no_template_visits(dataSlice) # get the mask of science images
@@ -420,7 +410,7 @@ class doAllTemplateMetrics(BaseTemplateMetric):
 
         sci_img = metricVal[0] # dataSlice of science images
         temp_img = metricVal[1] # dataSlice of template images
-        first_night = metricVal[2][self.nightCol] # first night of visit
+        first_night = metricVal[2][self.night_col] # first night of visit
 
 #         # This version of the metric ignores the template generation timescale, to account for distinct nights:
 #         # metric_plot = np.ceil(metric_plot/template_timescale)*template_timescale
@@ -469,7 +459,7 @@ class doAllTemplateMetrics(BaseTemplateMetric):
 #         if (len(sci_img)==0): # no science images exist
             seeing = self.badval
         else:
-            seeing = np.mean(temp_img[self.seeingCol]) # calculate the mean seeing
+            seeing = np.mean(temp_img[self.seeing_col]) # calculate the mean seeing
         return seeing
 
     def reduceDepthTemplate(self,metricVal):
@@ -484,7 +474,7 @@ class doAllTemplateMetrics(BaseTemplateMetric):
 #         if (len(sci_img)==0): # no science images exist
             depth = self.badval
         else:
-            depth = np.mean(temp_img[self.m5Col]) # calculate the mean depth
+            depth = np.mean(temp_img[self.m5_col]) # calculate the mean depth
         return depth
 
     ### additional metrics
@@ -492,7 +482,7 @@ class doAllTemplateMetrics(BaseTemplateMetric):
     # As we increase template generation timescale this will become the same as reduceDeltaNight
 
 
-# In[17]:
+# In[45]:
 
 
 class doPairTemplateMetrics(BaseTemplateMetric):
@@ -504,7 +494,7 @@ class doPairTemplateMetrics(BaseTemplateMetric):
         super().__init__(col=col, **kwargs)
         self.idCol = col
 
-    def run(self, dataSlice, slicePoint=None):
+    def run(self, dataSlice, slice_point=None):
 
         # run the template checking code to create a dataSlice with only the visits with templates
         has_template_indx, template_img_indx = self._remove_no_template_visits(dataSlice) # get the mask of science images
@@ -523,11 +513,11 @@ class doPairTemplateMetrics(BaseTemplateMetric):
         if len(x)==0:
             pairs = self.badval
         else:
-            pairs = maf.metrics.pairMetric.PairMetric(mjdCol='observationStartMJD', metricName='Pairs').run(x)
+            pairs = maf.metrics.PairMetric(mjd_col='observationStartMJD', metric_name='Pairs').run(x)
         return pairs
 
 
-# In[18]:
+# In[46]:
 
 
 # Do regular metrics on the baseline, count visits and pairs
@@ -557,30 +547,30 @@ for filt in ["all","u","g","r","i","z","y",
         sql = 'filter = "{}" and night <= {}'.format(filt,t_data)+sqlDD
 
     # Run the regular metrics without templates
-    metric = maf.CountMetric(col='night', metricName = "CountMetric")
-    bl.append(maf.MetricBundle(metric, slicer1, sql, summaryMetrics=summary_stats, runName=_runName))
+    metric = maf.CountMetric(col='night', metric_name = "CountMetric")
+    bl.append(maf.MetricBundle(metric, slicer1, sql, summary_metrics=summary_stats, run_name=_runName))
 
-    metric = maf.metrics.pairMetric.PairMetric(mjdCol='observationStartMJD', metricName = "PairMetric")
-    bl.append(maf.MetricBundle(metric, slicer1, sql, summaryMetrics=summary_stats, runName=_runName))
+    metric = maf.metrics.PairMetric(mjd_col='observationStartMJD', metric_name = "PairMetric")
+    bl.append(maf.MetricBundle(metric, slicer1, sql, summary_metrics=summary_stats, run_name=_runName))
 
     # Run the time based metrics
-    metric = maf.CountMetric(col='night', metricName = "CountMetric")
-    bl.append(maf.MetricBundle(metric, slicer2, sql, summaryMetrics=summary_stats, runName=_runName))
+    metric = maf.CountMetric(col='night', metric_name = "CountMetric")
+    bl.append(maf.MetricBundle(metric, slicer2, sql, summary_metrics=summary_stats, run_name=_runName))
 
-    metric = maf.metrics.pairMetric.PairMetric(mjdCol='observationStartMJD', metricName = "PairMetric")
-    bl.append(maf.MetricBundle(metric, slicer2, sql, summaryMetrics=summary_stats, runName=_runName))
+    metric = maf.metrics.PairMetric(mjd_col='observationStartMJD', metric_name = "PairMetric")
+    bl.append(maf.MetricBundle(metric, slicer2, sql, summary_metrics=summary_stats, run_name=_runName))
 
-mg = maf.MetricBundleGroup(bl, opsdb, outDir=save_dir)
+mg = maf.MetricBundleGroup(bl, opsdb, out_dir=save_dir)
 
-mg.runAll()
-mg.plotAll(closefigs=False)
+mg.run_all()
+mg.plot_all(closefigs=False)
 
 end = time.time()
 dt = end-start
 print("{}s ({:2f}min or {:2f}hrs)".format(dt,dt/60,dt/60/60))
 
 
-# In[19]:
+# In[18]:
 
 
 # do metrics with templates for a spatial slicer
@@ -613,13 +603,13 @@ for template_timescale in tscales:
                 sql = 'filter = "{}" and night <= {}'.format(filt,t_data)+sqlDD
 
             # Our new metric that only counts things after templates have been generated
-            metric = doAllTemplateMetrics(units='count', metricName = "doAllTemplateMetrics",
+            metric = doAllTemplateMetrics(units='count', metric_name = "doAllTemplateMetrics",
                                              night_template_min = t_template)
-            bl.append(maf.MetricBundle(metric, slicer, sql, summaryMetrics=summary_stats, runName=_runName))
+            bl.append(maf.MetricBundle(metric, slicer, sql, summary_metrics=summary_stats, run_name=_runName))
 
-        mg = maf.MetricBundleGroup(bl, opsdb, outDir=save_dir)
+        mg = maf.MetricBundleGroup(bl, opsdb, out_dir=save_dir)
 
-        mg.runAll()
+        mg.run_all()
 #             mg.plotAll(closefigs=False)
 
 end = time.time()
@@ -627,7 +617,7 @@ dt = end-start
 print("{}s ({:2f}min or {:2f}hrs)".format(dt,dt/60,dt/60/60))
 
 
-# In[20]:
+# In[19]:
 
 
 # run pair metrics with templates for a spatial slicer
@@ -661,13 +651,13 @@ for template_timescale in tscales:
                 sql = '(filter = "r" or filter = "{}") and night <= {}'.format(filt,t_data)+sqlDD
 
             # Our new metric that only counts things after templates have been generated
-            metric = doPairTemplateMetrics(units='count', metricName = "doPairTemplateMetrics",
+            metric = doPairTemplateMetrics(units='count', metric_name = "doPairTemplateMetrics",
                                              night_template_min = t_template)
-            bl.append(maf.MetricBundle(metric, slicer, sql, summaryMetrics=summary_stats, runName=_runName))
+            bl.append(maf.MetricBundle(metric, slicer, sql, summary_metrics=summary_stats, run_name=_runName))
 
-        mg = maf.MetricBundleGroup(bl, opsdb, outDir=save_dir)
+        mg = maf.MetricBundleGroup(bl, opsdb, out_dir=save_dir)
 
-        mg.runAll()
+        mg.run_all()
 #             mg.plotAll(closefigs=False)
 
 end = time.time()
@@ -675,127 +665,10 @@ dt = end-start
 print("{}s ({:2f}min or {:2f}hrs)".format(dt,dt/60,dt/60/60))
 
 
-# # Load the saved template metric data and combine the chunks
-
-# In[21]:
-
-
-start = time.time()
-
-# glob filenames with pattern: runName, metricName
-files = glob.glob("{}/*npz".format(save_dir))
-
-# define list of metrics to load
-metric_list = ["doAllTemplateMetrics_Count","doAllTemplateMetrics_Night",
-              "doAllTemplateMetrics_DeltaNight",
-               "doAllTemplateMetrics_SeeingTemplate","doAllTemplateMetrics_DepthTemplate",
-              "doAllTemplateMetrics_NTemplate", "doPairTemplateMetrics_Pairs"]
-
-# sql_list to get filters
-filters = ["all","u","g","r","i","z","y","r_or_g","r_or_i","r_or_z"]
-
-metric_dict = {}
-
-for template_timescale in tscales:
-
-    _runName = "{}_tscale-{}_nside-{}".format(runName,template_timescale,nside).replace(".","_")
-
-    print(_runName)
-
-    metric_dict[str(template_timescale)] = {}
-
-    for metric in metric_list:
-
-        print(metric)
-
-        metric_dict[str(template_timescale)][metric] = {}
-
-        for filt in filters:
-
-            if metric == "doPairTemplateMetrics_Pairs" and (("or" not in filt) and ("all" not in filt)):
-                continue
-
-            print(filt)
-
-            if filt=="all":
-                _files = [x for x in files if (_runName in x) & (metric in x)
-                         & ~(("_u_".format(filt) in x)
-                         | ("_g_".format(filt) in x)
-                         | ("_r_".format(filt) in x)
-                         | ("_i_".format(filt) in x)
-                         | ("_z_".format(filt) in x)
-                         | ("_y_".format(filt) in x))]
-            else:
-                _files = [x for x in files if (_runName in x) & (metric in x) & ("_{}_".format(filt) in x)]
-            _files.sort() # sort to ensure files are in numerical order
-            print(_files)
-            print(len(_files))
-
-            if len(_files)==0:
-                print("NO FILES?")
-                continue
-
-            # Each metric was run on batches of visits, we therefore store a list of loaded files for each metric
-            metric_bundle = []
-
-            for x in _files:
-                metric_bundle.append(maf.MetricBundle.load(x))
-
-
-    #         # Slice points
-    #         metric_slice = metric_bundle[0].slicer.slicePoints
-
-            # retrieve all the masked arrays, each value corresponds to the metric value for some slice point
-            data = [mb.metricValues.data for mb in metric_bundle]
-            mask = [mb.metricValues.mask for mb in metric_bundle]
-            metric_data = np.ma.array(data, mask=mask)
-
-            if (metric=="doAllTemplateMetrics_Night") or \
-            (metric=="doAllTemplateMetrics_DeltaNight") or \
-            (metric=="doAllTemplateMetrics_NTemplate") or \
-            (metric=="doAllTemplateMetrics_DtTemplate"):
-                # find the min of all constituent metrics
-                metric_vals = metric_data.min(axis=0)
-            elif (metric=="doAllTemplateMetrics_SeeingTemplate") or (metric=="doAllTemplateMetrics_DepthTemplate"):
-                # find the mean of the metrics
-                metric_vals = metric_data.mean(axis=0)
-            else:
-                # find the sum of all constituent metrics
-                metric_vals = metric_data.sum(axis=0)
-
-            metric_vals.fill_value = np.nan
-
-            metric_dict[str(template_timescale)][metric][filt] = metric_vals
-
-end = time.time()
-dt = end-start
-print("{}s ({:2f}min or {:2f}hrs)".format(dt,dt/60,dt/60/60))
-
-
-# In[22]:
-
-
-for x in metric_dict.keys():
-    print(metric_dict[x].keys())
-    for y in metric_dict[x].keys():
-        print(len(metric_dict[x][y]))
-
-
-# In[23]:
-
-
-
-# In[24]:
-
-
-
-# In[25]:
-
-
 
 # # Run the full remove template code on all date ranges
 
-# In[26]:
+# In[53]:
 
 
 template_col = "npix_template"
@@ -824,7 +697,7 @@ else:
             t_data = template_nights[i] # query all visits up to the time when we must consider new template generation
             t_template = template_nights[i-1] # this is the last date at which templates were generated
             # select visits in chunk from original year 1 database
-            data = maf.getSimData(opsdb, None, None,
+            data = maf.get_sim_data(opsdb, None, None,
                                   full_sql_query='select * from observations where night <= {}{};'.format(t_data,sqlDD))
 
             # convert to dataframe
@@ -864,7 +737,7 @@ else:
     json.dump(template_visits, open(templates_fname, 'w' ) )
 
 
-# In[27]:
+# In[54]:
 
 
 # save the redacted database for each timescale
@@ -889,75 +762,3 @@ for template_timescale in tscales:
     # save reduced visit dataframe to sql
     df_data_w_templates.to_sql('observations', conn, index=False, if_exists='replace')
     conn.close()
-
-
-# In[28]:
-
-
-template_visits.keys()
-
-
-# In[29]:
-
-
-
-# In[30]:
-
-
-
-# In[31]:
-
-
-
-# In[32]:
-
-
-
-# In[33]:
-
-
-
-# In[34]:
-
-
-
-# In[36]:
-
-
-# prin the total number of visits at the end of year 1 for each timescale
-for t in tscales:
-    print(t, sum(template_visits[str(t)]["n_visits"]))
-
-
-# # mask the visit database to get a more realistic number of useful visits
-# This will be an underestimate compared to analysing each healpixel directly
-
-# In[37]:
-
-
-
-# In[38]:
-
-
-
-# In[39]:
-
-
-# repeat the above plot but with cumsum to get total visits as function of time
-
-
-# In[40]:
-
-
-
-# In[41]:
-
-
-# plot number of visits (at end of year 1) vs template timescale
-
-
-# In[42]:
-
-
-
-# In[ ]:
