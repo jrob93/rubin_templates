@@ -34,3 +34,6 @@ done
 echo "wait" >> $out
 
 cat $out
+
+echo
+echo "save as $out"
