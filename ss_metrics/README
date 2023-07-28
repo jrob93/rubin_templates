@@ -2,6 +2,7 @@
 ls ../*/*.db > visit_db_list.txt
 
 # create symlinks in this directory for the dbs
+# use command line arg to pass a different db list file
 ./gen_db_symlinks.sh
 
 # create the ss_script.sh file for each db
