@@ -59,8 +59,9 @@ s_t = maf.OneDSlicer(slice_col_name="night", bins = nights)
 
 
 # set path for metric output files
-save_dir = "remove_no_template_results_{}".format(nside)
-
+save_dir = "remove_no_template_results_{}_{}".format(nside,year1_fname.replace(".","_"))
+print(save_dir)
+exit()
 
 # In[6]:
 
