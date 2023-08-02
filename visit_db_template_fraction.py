@@ -16,6 +16,8 @@ import sqlite3
 
 # In[2]:
 
+# script to read a visit db with template coverage column
+# and redact it based on some fractional coverage cut
 
 template_frac_list = [0.9,0.6]
 lsst_footprint = 9.6 # square degrees, GET EXACT NUMBER?
@@ -25,10 +27,10 @@ night_max = 365
 # In[3]:
 
 
-db_files = glob.glob("remove_no_template_results*/visit_cut*.db")
+# db_files = glob.glob("remove_no_template_results*/*visit_cut*.db")
+db_files = glob.glob("visit_cut_dbs/remove_no_template_results*/*visit_cut*.db")
 db_files = [x for x in db_files if "frac" not in x]
 print(db_files)
-
 
 # In[4]:
 
@@ -67,11 +69,11 @@ for template_frac in template_frac_list:
         df_out = df[frac_mask].reset_index(drop=True) # reset the dataframe index 
         dbf_out = dbf.split(".db")[0]+"_frac{}.db".format(int(template_frac*100))
 
-    #     # open up a connection to a new database
-    #     conn = sqlite3.connect(dbf_out)
-    #     # save reduced visit dataframe to sql
-    #     df_out.to_sql('observations', conn, index=False, if_exists='replace')
-    #     conn.close()
+        # open up a connection to a new database
+        conn = sqlite3.connect(dbf_out)
+        # save reduced visit dataframe to sql
+        df_out.to_sql('observations', conn, index=False, if_exists='replace')
+        conn.close()
         print("save {}\n".format(dbf_out))
 
 
