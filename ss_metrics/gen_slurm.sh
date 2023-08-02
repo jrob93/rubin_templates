@@ -9,6 +9,14 @@ else
   mem=$1
 fi
 
+# also pass the population
+if [ $# -eq 0 ]
+  then
+    pop="mba_5k"
+else
+  pop=$2
+fi
+
 nodes=1
 ntasks=1
 out="test.slurm"
@@ -22,7 +30,7 @@ echo "$(cat slurm_header.txt)" >> $out
 echo -e "cd $PWD\n" >> $out
 
 # loop over all db files in this directory
-for f in ss_script*.sh; do
+for f in ss_script*$pop.sh; do
   srun="srun --export=ALL --ntasks=$ntasks --nodes=$nodes --mem-per-cpu=$mem ./$f &"
   #srun="srun --export=ALL --ntasks=$ntasks --nodes=$nodes --mem-per-cpu=$mem echo \"hello world\" &"
   echo $srun >> $out
