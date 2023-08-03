@@ -754,7 +754,7 @@ for template_timescale in tscales:
     # keep only visits with a template fractional coverage greater than some number (>0.9?)
     df_data_w_templates.loc[:,"npix_template"] = template_visits[str(template_timescale)]["npix_template"]
 
-    fname = "{}/visit_cut_t-{}d_nside-{}.db".format(save_dir,template_timescale,nside)
+    fname = "{}/{}_visit_cut_t-{}d_nside-{}.db".format(runName.replace(".","_"),save_dir,template_timescale,nside)
     print(fname)
 
     # open up a connection to a new database
