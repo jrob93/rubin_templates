@@ -134,3 +134,6 @@ dmypy.json
 *_ss
 *.db
 *.out
+ss_script*.sh
+gen_slurm_*_5k.sh
+*.slurm
