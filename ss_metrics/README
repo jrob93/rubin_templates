@@ -7,11 +7,15 @@ ls ../*/*.db > visit_db_list.txt
 
 # create the ss_script.sh file for each db
 # also add the relevant lines from ss_script_header.txt required to run on cuillin
+# 1st cmd line arg: population to run ss_metrics on
+# 2nd cmd line arg: a db keyword to select a particular set of dbs (e.g. baseline_v3_2 searches *baseline_v3_2*.db)
 ./gen_ss_script.sh
 
 # put all ss_script.sh files into a slurm script for batch submission
 # the default info in slurm_header.txt assumes 1 job per core
-# use command line arg to select memory per task
+# 1: use command line arg to select memory per task, e.g. 2GB
+# 2: select the dynamical population, e.g. mba_5k
+# 3: select a db keyword to run on selected dbs, e.g. baseline_v3_2
 ./gen_slurm.sh
 
 # the resulting file test.slurm must be renamed and SBATCH details filled out:
