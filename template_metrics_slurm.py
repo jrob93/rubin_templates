@@ -5,15 +5,17 @@ import numpy as np
 # tscales = [3,7,14,28]
 # runs = ["baseline", "metrics", "pairs", "visits"]
 
-db_list = ["baseline_v3.2_10yrs.db"]
+db_list = ["baseline_v3.3_10yrs.db"]
 nside_list = [256]
-tscales = [3,7,14,28]
+# tscales = [3,7,14,28]
+tscales = [3]
 runs = ["baseline", "metrics", "pairs", "visits"]
 
 # slurm setup
 mem_per_task = 2
 srun_cmd = "srun --export=ALL --ntasks=1 --nodes=1 --mem-per-cpu={}GB --exclusive".format(mem_per_task)
 max_hours = 7*24
+run_dir = "/home/jrobinson/rubin_templates"
 
 base_cmd = "python -u template_metrics.py"
 
@@ -53,10 +55,9 @@ for t in tscales:
 
 . /usr/local/anaconda/3.9/etc/profile.d/conda.sh
 conda activate rubin
-cd /home/jrobinson/rubin_templates/remove_no_template_visits
+cd {}
 
-{}
-wait""".format(job_name,count,_max_hours,count*mem_per_task,"\n".join(cmd_list))
+{}\nwait""".format(job_name,count,_max_hours,count*mem_per_task,run_dir,"\n".join(cmd_list))
 
     print(slurm_script)
 
