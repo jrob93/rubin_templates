@@ -23,3 +23,11 @@ ls ../*/*.db > visit_db_list.txt
 
 # then submit the .slurm file
 sbatch .slurm
+
+# retrieve results from cuillin:
+rsync -nav -e ssh cuillin:/home/jrobinson/rubin_templates/ss_metrics/*frac90_ss . --exclude="*.npz" --exclude="*.png" --exclude="*.pdf"
+
+# see notebook at: http://localhost:8888/notebooks/Documents/proposals%20presentations%20projects/LSST_PCW_2023/results/read_metric_dbs.ipynb
+
+# Dynamical populations for moving object metrics:
+# https://github.com/lsst-sssc/SSSC_test_populations_gitlfs/tree/main/MAF_TEST
