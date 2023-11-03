@@ -347,7 +347,7 @@ if visits:
                 obsIds += list(data_w_templates["observationId"])
                 print(t_data,t_template,n,data.size,len(obsIds))
 
-                data_w_templates = remove_no_templates(data, night_template_min = t_template, nside = nside)
+                # data_w_templates = remove_no_templates(data, night_template_min = t_template, nside = nside)
                 template_frac_list+=list(data_w_templates[template_col])
 
             # store the obsids and template_fraction of each timescale
@@ -369,20 +369,24 @@ if visits:
 
     for template_timescale in tscales:
 
-        df_data_w_templates = df_data[np.isin(df_data["observationId"],template_visits[str(template_timescale)]["obsIds"])]
-        print(template_timescale, len(df_data_w_templates))
+        template_mask = np.isin(df_data["observationId"],template_visits[str(template_timescale)]["obsIds"])
+        print(template_timescale, len(df_data))
 
         # Insert a column for fraction template coverage
-        # keep only visits with a template fractional coverage greater than some number (>0.9?)
-        df_data_w_templates.loc[:,"npix_template"] = template_visits[str(template_timescale)]["npix_template"]
+        # During analysis keep only visits with a template fractional coverage greater than some number (>0.9?)
 
-        fname = "{}/{}_visit_cut_t-{}d_nside-{}.db".format(save_dir,runName.replace(".","_"),template_timescale,nside)
+        # record the number of pixels in visits with at least one healpixel template
+        df_data.loc[template_mask,"npix_template"] = template_visits[str(template_timescale)]["npix_template"]
+        # flag the visit with zero template coverage
+        df_data.loc[~template_mask,"npix_template"] = 0
+
+        fname = "{}/visit_cut_t-{}d_nside-{}.db".format(save_dir,template_timescale,nside)
         print(fname)
 
         # open up a connection to a new database
         conn = sqlite3.connect(fname)
         # save reduced visit dataframe to sql
-        df_data_w_templates.to_sql('observations', conn, index=False, if_exists='replace')
+        df_data.to_sql('observations', conn, index=False, if_exists='replace')
         conn.close()
 
     end = time.time()
