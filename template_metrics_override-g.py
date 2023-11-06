@@ -83,8 +83,8 @@ night_min = 0
 night_max = 365
 
 # define any filters to override
-override_filter = [None]
-# override_filter = ["g"]
+# override_filter = [None]
+override_filter = ["g"]
 
 # set up spatial slicer with nside
 s_hp = maf.HealpixSlicer(nside=nside)

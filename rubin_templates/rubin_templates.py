@@ -32,6 +32,7 @@ class BaseTemplateMetric(maf.metrics.BaseMetric):
                 filter_col='filter',
                  seeing_ratio=2.0, m5_range=0.5,
                  seeing_col='seeingFwhmEff', m5_col='fiveSigmaDepth',
+                 override_filter=[None],
                  **kwargs):
         if col is None:
             col = []
@@ -44,6 +45,7 @@ class BaseTemplateMetric(maf.metrics.BaseMetric):
         self.mjd_col = mjd_col
         self.night_col = night_col
         self.filter_col = filter_col
+        self.override_filter = override_filter ### a list of filters for which we override the template generation
 
         self.seeing_col = seeing_col
         self.m5_col = m5_col
@@ -60,6 +62,9 @@ class BaseTemplateMetric(maf.metrics.BaseMetric):
                          metric_name=self.metric_name, **kwargs)
 
         print("night_template_min = {}, seeing_ratio = {}, m5_range = {}".format(self.night_template_min,self.seeing_ratio,self.m5_range))
+
+        if not None in override_filter:
+            print("override filters: {}".format(override_filter))
 
     def _remove_no_template_visits(self, dataSlice):
 
@@ -93,6 +98,26 @@ class BaseTemplateMetric(maf.metrics.BaseMetric):
             infilt = np.where(dataSlice[self.filter_col] == filtername)[0] # index zero required to get just the mask (or use True, False arguments like Lynne above)
             # mask for template images in the filter
             infilt_templates = infilt & template_time[infilt]
+
+            ### override the template selection and keep all images in a particular filter
+            if filtername in self.override_filter:
+
+                # on night 0 we need to include all g frames taken that night
+                # redo the masks but include images taken on night 0
+                if self.night_template_min==0:
+
+                    has_template_indx = np.ones(dataSlice.size, dtype=bool)
+                    template_img_indx = np.ones(dataSlice.size, dtype=bool)
+                    template_time = np.where(dataSlice[self.night_col] <= self.night_template_min,
+                    True, False)
+                    image_time = np.where(dataSlice[self.night_col] >= self.night_template_min,
+                    True, False)
+                    has_template_indx[~(image_time)] = False
+                    template_img_indx[~(template_time)] = False
+
+                # we skip the usual masking steps for the override filter
+                # the function will return masks where all science images are true
+                continue
 
             # What if there are zero template images in this filter?
             if sum(infilt_templates)==0:
