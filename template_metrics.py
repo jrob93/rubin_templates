@@ -107,9 +107,12 @@ print("healpixel area = {} square degrees\n number of healpixels in visit = {}".
 # Ignore deep drilling fields
 # This string will be applied to metric sql query and also to the redacted database code
 # sqlDD = ''
-sqlDD = ' and note not like "%DD%"'
-if sqlDD!='':
-    save_dir+="_noDD" # change the save directory
+# sqlDD = ' and note not like "%DD%"'
+# if sqlDD!='':
+#     save_dir+="_noDD" # change the save directory
+sqlDD = ' and note not like "%DD%" and note not like "%twilight%"'
+if sqlDD!='':      
+    save_dir+="_noDD_noTwi" # change the save directory
 print(save_dir)
 
 
