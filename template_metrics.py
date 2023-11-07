@@ -390,6 +390,8 @@ if visits:
     df_data = df_year1.copy()
     print("save df_data: {} rows".format(len(df_data)))
 
+    _save_dir = save_dir.split("_{}_".format(str(nside)))[-1]
+
     for template_timescale in tscales:
 
         template_mask = np.isin(df_data["observationId"],template_visits[str(template_timescale)]["obsIds"])
@@ -409,7 +411,7 @@ if visits:
         df_data.loc[npix_mask,"npix_template"] = n_pix
         print(sum(npix_mask))
 
-        fname = "{}/visit_cut_t-{}d_nside-{}.db".format(save_dir,template_timescale,nside)
+        fname = "{}/{}_visit_cut_t-{}d_nside-{}.db".format(save_dir,_save_dir,template_timescale,nside)
         print(fname)
 
         # open up a connection to a new database
