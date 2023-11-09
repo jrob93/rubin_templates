@@ -122,15 +122,18 @@ print("healpixel area = {} square degrees\n number of healpixels in visit = {}".
 sqlDD = ' and note not like "%DD%" and note not like "%twilight%"'
 if sqlDD!='':
     save_dir+="_noDD_noTwi" # change the save directory
+    print(year1_fname)
+    year1_fname = "{}{}.db".format(year1_fname.replace(".","_"),"_noDD_noTwi") # update the baseline db file
+    print(year1_fname)
 print(save_dir)
-
 
 # query or load the database of year 1 observations
 if not os.path.isfile(year1_fname):
     print("get year 1 observations")
     conn = sqlite3.connect(baseline_db)
-    df = pd.read_sql('select * from observations;', conn)
-    df_year1 = df[df["night"]<=night_max]
+    qry = 'select * from observations where night<{}{};'.format(night_max,sqlDD)
+    print(qry)
+    df_year1 = pd.read_sql(qry, conn)
     conn.close()
 
     # open up a connection to a new database
