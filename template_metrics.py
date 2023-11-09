@@ -66,6 +66,13 @@ if options.visits:
 else:
     visits = False
 
+if not baseline and not metrics and not pairs and not visits:
+    print("no flag selected, running all flags: --metrics, --pairs, --visits")
+    baseline = True
+    metrics = True
+    pairs = True
+    visits = True
+
 print("baseline_db: ",baseline_db)
 print("nside: ",nside)
 print("tscales: ",tscales)
@@ -145,6 +152,7 @@ else:
     conn = sqlite3.connect(year1_fname)
     df_year1 = pd.read_sql('select * from observations;', conn)
     conn.close()
+
 
 
 # set up some filenames
@@ -427,5 +435,5 @@ if visits:
     dt = end-start
     print("{}s ({:2f}min or {:2f}hrs)".format(dt,dt/60,dt/60/60))
 
-if not baseline or not metrics and not pairs and not visits:
+if not baseline and not metrics and not pairs and not visits:
     print("select a flag: --metrics, --pairs, --visits")
