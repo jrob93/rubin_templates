@@ -27,6 +27,7 @@ parser.add_option( "-n", "--nside", dest="nside", help="nside for healpix", meta
 parser.add_option( "-t", "--tscales", action="append", dest="tscales", help="timescales for template generation (list append)", metavar="TSCALES" )
 parser.add_option( "-s", "--save_path", dest="save_path", help="save path for outpur dir", metavar="SAVE_PATH" )
 parser.add_option( "-b", "--baseline", action="store_true", dest="baseline", help="flag to run baseline metrics")
+parser.add_option( "-B", "--baseline_time", action="store_true", dest="baseline_time", help="flag to run baseline_time metrics")
 parser.add_option( "-m", "--metrics", action="store_true", dest="metrics", help="flag to run template metrics")
 parser.add_option( "-p", "--pairs", action="store_true", dest="pairs", help="flag to run pair template metrics")
 parser.add_option( "-v", "--visits", action="store_true", dest="visits", help="flag to run visit database template redaction code")
@@ -36,7 +37,7 @@ parser.add_option( "-v", "--visits", action="store_true", dest="visits", help="f
 if options.baseline_db:
     baseline_db=options.baseline_db
 else:
-    baseline_db="baseline_v3.0_10yrs.db"
+    baseline_db="baseline_v3.3_10yrs.db"
 if options.nside:
     nside = int(options.nside)
 else:
@@ -53,6 +54,10 @@ if options.baseline:
     baseline = True
 else:
     baseline = False
+if options.baseline_time:
+    baseline_time = True
+else:
+    baseline_time = False
 if options.metrics:
     metrics = True
 else:
@@ -66,9 +71,10 @@ if options.visits:
 else:
     visits = False
 
-if not baseline and not metrics and not pairs and not visits:
-    print("no flag selected, running all flags: --metrics, --pairs, --visits")
+if not baseline and not baseline_time and not metrics and not pairs and not visits:
+    print("no flag selected, running all flags: --baseline, --baseline_time, --metrics, --pairs, --visits")
     baseline = True
+    baseline_time = True
     metrics = True
     pairs = True
     visits = True
@@ -78,6 +84,7 @@ print("nside: ",nside)
 print("tscales: ",tscales)
 print("save_path: ",save_path)
 print("baseline metrics flag: ", baseline)
+print("baseline_time metrics flag: ", baseline_time)
 print("template metrics flag: ", metrics)
 print("template pairs flag: ", pairs)
 print("template visits flag: ", visits)
@@ -93,6 +100,10 @@ night_max = 365
 override_filter = [None]
 # override_filter = ["g"]
 
+# how many images required for templates?
+n_visits_for_template = 3.
+# n_visits_for_template = 4.
+
 # set up spatial slicer with nside
 s_hp = maf.HealpixSlicer(nside=nside)
 
@@ -100,17 +111,19 @@ s_hp = maf.HealpixSlicer(nside=nside)
 nights = np.arange(night_min, night_max+1, 1)
 s_t = maf.OneDSlicer(slice_col_name="night", bins = nights-0.5) # subtract half a night as slicer bins are left and right inclusive
 
-
 # set path for metric output files
 if None not in override_filter:
     save_dir = "remove_no_template_results_{}_{}_override-{}".format(nside,year1_fname.replace(".","_"),"".join(override_filter))
 else:
     save_dir = "remove_no_template_results_{}_{}".format(nside,year1_fname.replace(".","_"))
 
+if n_visits_for_template != 3:
+    save_dir += "_n_visits_{}".format(int(n_visits_for_template))
+
 if save_path != "":
     save_dir = save_path + "/" + save_dir
 
-print(save_dir)
+print("save_dir = {}".format(save_dir))
 
 
 # use the healpix area to find approximate number of healpixels in a single visit
@@ -149,10 +162,12 @@ if not os.path.isfile(year1_fname):
     conn.close()
 
 else:
+    print("load year 1: {}".format(year1_fname))
     conn = sqlite3.connect(year1_fname)
     df_year1 = pd.read_sql('select * from observations;', conn)
     conn.close()
 
+print("len(df_year1) = {}".format(len(df_year1)))
 
 
 # set up some filenames
@@ -225,6 +240,62 @@ if baseline:
     dt = end-start
     print("{}s ({:2f}min or {:2f}hrs)".format(dt,dt/60,dt/60/60))
 
+if baseline_time:
+    # do metrics with templates for a spatial slicer
+    print("run baseline_time metrics")
+
+    start = time.time()
+
+    slicer1 = s_hp # spatial slicer
+    slicer2 = s_t # time (night) slicer
+
+    for template_timescale in tscales:
+
+        _runName = "{}_tscale-{}_nside-{}".format(runName,template_timescale,nside)
+
+        template_nights = template_timescales[str(template_timescale)]
+
+        for i in range(1,len(template_nights)):
+
+            t_data = template_nights[i] # query all visits up to the time when we must consider new template generation
+            t_template = template_nights[i-1] # this is the last date at which templates were generated
+
+            print(template_timescale,t_template,t_data)
+
+            bl = []
+            summary_stats = [maf.MedianMetric()]
+
+            for filt in ["all","u","g","r","i","z","y"]:
+
+                if filt=="all":
+                    sql = 'night <= {}'.format(t_data)+sqlDD
+                else:
+                    sql = 'filter = "{}" and night <= {}'.format(filt,t_data)+sqlDD
+
+                # Run the regular metrics without templates
+                metric = maf.CountMetric(col='night', metric_name = "CountMetric")
+                bl.append(maf.MetricBundle(metric, slicer1, sql, summary_metrics=summary_stats, run_name=_runName))
+
+                # metric = maf.metrics.PairMetric(mjd_col='observationStartMJD', metric_name = "PairMetric")
+                # bl.append(maf.MetricBundle(metric, slicer1, sql, summary_metrics=summary_stats, run_name=_runName))
+
+                # Run the time based metrics
+                metric = maf.CountMetric(col='night', metric_name = "CountMetric")
+                bl.append(maf.MetricBundle(metric, slicer2, sql, summary_metrics=summary_stats, run_name=_runName))
+
+                # metric = maf.metrics.PairMetric(mjd_col='observationStartMJD', metric_name = "PairMetric")
+                # bl.append(maf.MetricBundle(metric, slicer2, sql, summary_metrics=summary_stats, run_name=_runName))
+
+
+            mg = maf.MetricBundleGroup(bl, opsdb, out_dir=save_dir)
+
+            mg.run_all()
+    #             mg.plotAll(closefigs=False)
+
+    end = time.time()
+    dt = end-start
+    print("{}s ({:2f}min or {:2f}hrs)".format(dt,dt/60,dt/60/60))
+
 if metrics:
     # do metrics with templates for a spatial slicer
     print("run template metrics")
@@ -259,6 +330,7 @@ if metrics:
                 # Our new metric that only counts things after templates have been generated
                 metric = doAllTemplateMetrics(units='count', metric_name = "doAllTemplateMetrics",
                                                  night_template_min = t_template,
+                                                 n_visits_for_template = n_visits_for_template,
                                                  override_filter = override_filter)
                 bl.append(maf.MetricBundle(metric, slicer, sql, summary_metrics=summary_stats, run_name=_runName))
 
@@ -308,6 +380,7 @@ if pairs:
                 # Our new metric that only counts things after templates have been generated
                 metric = doPairTemplateMetrics(units='count', metric_name = "doPairTemplateMetrics",
                                                  night_template_min = t_template,
+                                                 n_visits_for_template = n_visits_for_template,
                                                  override_filter = override_filter)
                 bl.append(maf.MetricBundle(metric, slicer, sql, summary_metrics=summary_stats, run_name=_runName))
 
@@ -353,11 +426,13 @@ if visits:
                 t_data = template_nights[i] # query all visits up to the time when we must consider new template generation
                 t_template = template_nights[i-1] # this is the last date at which templates were generated
                 # select visits in chunk from original year 1 database
-                data = maf.get_sim_data(opsdb, None, None,
-                                      full_sql_query='select * from observations where night <= {}{};'.format(t_data,sqlDD))
+                full_sql_query='select * from observations where night <= {}{};'.format(t_data,sqlDD)
+                print(full_sql_query)
+                data = maf.get_sim_data(opsdb, None, None,full_sql_query=full_sql_query)
 
                 # convert to dataframe
                 df = pd.DataFrame(data)
+                print(len(df))
 
                 # add new column
                 df[template_col] = np.nan
@@ -368,6 +443,7 @@ if visits:
                 # remove templates without visits
                 data_w_templates = remove_no_templates(data, night_template_min = t_template, nside = nside,
                                                       template_col = template_col,
+                                                      n_visits_for_template = n_visits_for_template,
                                                       override_filter = override_filter)
                 n = data_w_templates.size
                 n_visits.append(n)
@@ -424,6 +500,7 @@ if visits:
 
         fname = "{}/{}_visit_cut_t-{}d_nside-{}.db".format(save_dir,_save_dir,template_timescale,nside)
         print(fname)
+        print("len(df_data) = {}".format(len(df_data)))
 
         # open up a connection to a new database
         conn = sqlite3.connect(fname)
