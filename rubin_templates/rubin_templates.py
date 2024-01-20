@@ -61,7 +61,7 @@ class BaseTemplateMetric(maf.metrics.BaseMetric):
         super().__init__(col=[self.mjd_col, self.seeing_col, self.m5_col, self.night_col, self.filter_col],
                          metric_name=self.metric_name, **kwargs)
 
-        print("night_template_min = {}, seeing_ratio = {}, m5_range = {}".format(self.night_template_min,self.seeing_ratio,self.m5_range))
+        print("night_template_min = {}, n_visits_for_template = {}, seeing_ratio = {}, m5_range = {}".format(self.night_template_min,self.n_visits_for_template,self.seeing_ratio,self.m5_range))
 
         if not None in override_filter:
             print("override filters: {}".format(override_filter))
