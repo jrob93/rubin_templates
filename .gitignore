@@ -137,3 +137,5 @@ dmypy.json
 ss_script*.sh
 gen_slurm_*_5k.sh
 *.slurm
+remove_no_template_results_*
+*old_scripts*

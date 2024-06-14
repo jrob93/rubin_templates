@@ -18,6 +18,8 @@ ls ../*/*.db > visit_db_list.txt
 # 3: select a db keyword to run on selected dbs, e.g. baseline_v3_2
 ./gen_slurm.sh
 
+# see also gen_slurm_pop.sh to generate runs for all dynamical populations in a particular baseline
+
 # the resulting file test.slurm must be renamed and SBATCH details filled out:
 # jobname
 # ntasks
