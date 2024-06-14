@@ -140,3 +140,5 @@ gen_slurm_*_5k.sh
 **/tmp
 remove_no_template_results_*
 *old_scripts*
+Single_point_viz/test
+visit_db_list*.txt
