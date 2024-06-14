@@ -138,3 +138,5 @@ ss_script*.sh
 gen_slurm_*_5k.sh
 *.slurm
 **/tmp
+remove_no_template_results_*
+*old_scripts*
