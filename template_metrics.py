@@ -408,6 +408,10 @@ if visits:
     _runName = "{}_nside-{}".format(runName,nside).replace(".","_")
     templates_fname = "{}/{}_tscales-{}.json".format(save_dir,_runName,"-".join(str(x) for x in tscales))
 
+    if not os.path.isdir(save_dir):
+        print("mkdir {}".format(save_dir))
+        os.mkdir(save_dir)
+
     if os.path.isfile(templates_fname):
         print("load {}".format(templates_fname))
         template_visits = json.load( open(templates_fname) )

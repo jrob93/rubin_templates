@@ -717,7 +717,7 @@ else:
             obsIds += list(data_w_templates["observationId"])
             print(t_data,t_template,n,data.size,len(obsIds))
 
-            data_w_templates = remove_no_templates(data, night_template_min = t_template, nside = nside)
+            # data_w_templates = remove_no_templates(data, night_template_min = t_template, nside = nside)
             template_frac_list+=list(data_w_templates[template_col])
 
         # store the obsids and template_fraction of each timescale
