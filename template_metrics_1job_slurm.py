@@ -1,10 +1,13 @@
 import numpy as np
 
 # base_cmd = "python -u template_metrics.py"
-base_cmd = "python -u template_metrics_n_visits_4.py"
-
 # jobname_suffix = ""
-jobname_suffix = "n_visits_4"
+
+# base_cmd = "python -u template_metrics_n_visits_4.py"
+# jobname_suffix = "_n_visits_4"
+
+base_cmd = "python template_metrics_n_visits_4_override-g.py"
+jobname_suffix = "_n_visits_4_override_g"
 
 """
 # db_list = ["baseline_v3.0_10yrs.db","ender_a1_v3.1_10yrs.db","baseline_v3.2_10yrs.db"]
@@ -16,9 +19,8 @@ runs = ["metrics", "pairs", "visits"]
 
 db_list = ["baseline_v3.3_10yrs.db"]
 nside_list = [256]
-tscales = [3,7,14,28]
-# tscales = [3]
-runs = ["baseline", "metrics", "pairs", "visits"]
+tscales = [7,14]
+runs = ["metrics", "visits"]
 """
 
 db_list = ["baseline_v3.3_10yrs.db"]
@@ -32,8 +34,6 @@ srun_cmd = "srun --export=ALL --ntasks=1 --nodes=1 --mem-per-cpu={}GB --exclusiv
 max_hours = 5*24
 run_dir = "/home/jrobinson/rubin_templates"
 
-base_cmd = "python -u template_metrics.py"
-
 for t in tscales:
     for d in db_list:
         for n in nside_list:
@@ -41,8 +41,10 @@ for t in tscales:
 
                 count = 0
                 cmd_list = []
+                job_name = "{}_{}_{}_{}{}".format("_".join(d.split(".")),n,t,run,jobname_suffix)
 
-                out_file = "{}_{}_{}_{}".format("_".join(d.split(".")),n,t,run)
+                # out_file = "{}_{}_{}_{}".format("_".join(d.split(".")),n,t,run)
+                out_file = job_name
                 cmd = "{} -d {} -n {} -t {} --{} > {}.out &\necho \"launch {}\"".format(base_cmd,d,n,t,run,out_file,out_file)
                 cmd = srun_cmd + " " + cmd
                 cmd_list.append(cmd)
@@ -51,7 +53,6 @@ for t in tscales:
                 print("\n{} runs\n".format(count))
 
                 # make the slurm script
-                job_name = "{}_{}_{}_{}_{}".format("_".join(d.split(".")),n,t,run,jobname_suffix)
                 slurm_name = "{}.slurm".format(job_name)
 
                 if t==3:

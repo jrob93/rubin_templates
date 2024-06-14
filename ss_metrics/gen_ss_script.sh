@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # pass population from the command line
+# TODO: make an "all" option to do all pops? 
 pop=$1
 # check if file name is passed via command line
 if [ $# -eq 0 ]

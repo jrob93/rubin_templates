@@ -1,23 +1,34 @@
 import numpy as np
 
+# base_cmd = "python -u template_metrics.py"
+base_cmd = "python -u template_metrics_n_visits_4.py"
+
+"""
 # db_list = ["baseline_v3.0_10yrs.db","ender_a1_v3.1_10yrs.db","baseline_v3.2_10yrs.db"]
-# nside_list = [256]
-# tscales = [3,7,14,28]
+db_list = ["ender_a1_v3.1_10yrs.db"]
+nside_list = [256]
+tscales = [3,7,14,28]
 # runs = ["baseline", "metrics", "pairs", "visits"]
+runs = ["metrics", "pairs", "visits"]
 
 db_list = ["baseline_v3.3_10yrs.db"]
 nside_list = [256]
-# tscales = [3,7,14,28]
-tscales = [3]
+tscales = [3,7,14,28]
+# tscales = [3]
 runs = ["baseline", "metrics", "pairs", "visits"]
+"""
+
+db_list = ["baseline_v3.3_10yrs.db"]
+nside_list = [256]
+# tscales = [3,28]
+tscales = [7, 14]
+runs = ["metrics","visits"]
 
 # slurm setup
 mem_per_task = 2
 srun_cmd = "srun --export=ALL --ntasks=1 --nodes=1 --mem-per-cpu={}GB --exclusive".format(mem_per_task)
 max_hours = 7*24
 run_dir = "/home/jrobinson/rubin_templates"
-
-base_cmd = "python -u template_metrics.py"
 
 for t in tscales:
     count = 0
