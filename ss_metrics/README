@@ -29,7 +29,7 @@ ls ../*/*.db > visit_db_list.txt
 sbatch .slurm
 
 # retrieve results from cuillin:
-rsync -nav -e ssh cuillin:/home/jrobinson/rubin_templates/ss_metrics/*frac90_ss . --exclude="*.npz" --exclude="*.png" --exclude="*.pdf"
+rsync -nav -e ssh cuillin:/home/jrobinson/rubin_templates/ss_metrics/*baseline_v3_3*noTwi* . --exclude="*.npz" --exclude="*.png" --exclude="*.pdf" --exclude="*.out" --exclude="*baseline*.db" --exclude="*.slurm" --exclude="*.sh" --exclude="*.txt"
 
 # see notebook at: http://localhost:8888/notebooks/Documents/proposals%20presentations%20projects/LSST_PCW_2023/results/read_metric_dbs.ipynb
 
