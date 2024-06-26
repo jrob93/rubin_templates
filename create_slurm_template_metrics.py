@@ -1,32 +1,50 @@
 import numpy as np
 
 # base_cmd = "python -u template_metrics.py"
-base_cmd = "python -u template_metrics_n_visits_4.py"
-
-"""
-# db_list = ["baseline_v3.0_10yrs.db","ender_a1_v3.1_10yrs.db","baseline_v3.2_10yrs.db"]
-db_list = ["ender_a1_v3.1_10yrs.db"]
-nside_list = [256]
-tscales = [3,7,14,28]
-# runs = ["baseline", "metrics", "pairs", "visits"]
-runs = ["metrics", "pairs", "visits"]
-
-db_list = ["baseline_v3.3_10yrs.db"]
-nside_list = [256]
-tscales = [3,7,14,28]
+# job_suffix = "_baseline"
+# db_list = ["baseline_v3.4_10yrs.db"]
+# nside_list = [256]
 # tscales = [3]
-runs = ["baseline", "metrics", "pairs", "visits"]
-"""
+# runs = ["baseline"]
 
-db_list = ["baseline_v3.3_10yrs.db"]
-nside_list = [256]
+# base_cmd = "python -u template_metrics.py"
+# job_suffix = "_baseline_time"
+# db_list = ["baseline_v3.4_10yrs.db"]
+# nside_list = [256]
+# tscales = [3,7]
+# runs = ["baseline_time"]
+
+# base_cmd = "python -u template_metrics_n_visits_4.py"
+# job_suffix = "_n_visits_4_metrics"
+# db_list = ["baseline_v3.4_10yrs.db"]
+# nside_list = [256]
+# tscales = [3,7,14,28]
+# runs = ["metrics"]
+
+# base_cmd = "python -u template_metrics_n_visits_4.py"
+# job_suffix = "_n_visits_4_visits"
+# db_list = ["baseline_v3.4_10yrs.db"]
+# nside_list = [256]
+# tscales = [3,7,14,28]
+# runs = ["visits"]
+
+# base_cmd = "python -u template_metrics_n_visits_4_override-g.py"
+# job_suffix = "_n_visits_4_override-g_metrics"
+# db_list = ["baseline_v3.4_10yrs.db"]
+# nside_list = [256]
 # tscales = [3,28]
-tscales = [7, 14]
-runs = ["metrics","visits"]
+# runs = ["metrics"]
+
+base_cmd = "python -u template_metrics_n_visits_4_override-g.py"
+job_suffix = "_n_visits_4_override-g_visits"
+db_list = ["baseline_v3.4_10yrs.db"]
+nside_list = [256]
+tscales = [3,28]
+runs = ["visits"]
 
 # slurm setup
-mem_per_task = 2
-srun_cmd = "srun --export=ALL --ntasks=1 --nodes=1 --mem-per-cpu={}GB --exclusive".format(mem_per_task)
+mem_per_task = 4
+srun_cmd = "srun --constraint=intel --export=ALL --ntasks=1 --nodes=1 --mem-per-cpu={}GB --exclusive".format(mem_per_task)
 max_hours = 7*24
 run_dir = "/home/jrobinson/rubin_templates"
 
@@ -37,7 +55,7 @@ for t in tscales:
         for n in nside_list:
             for run in runs:
 
-                    out_file = "{}_{}_{}_{}".format("_".join(d.split(".")),n,t,run)
+                    out_file = "{}_{}_{}_{}{}".format("_".join(d.split(".")),n,t,run,job_suffix)
                     cmd = "{} -d {} -n {} -t {} --{} > {}.out &\necho \"launch {}\"".format(base_cmd,d,n,t,run,out_file,out_file)
                     cmd = srun_cmd + " " + cmd
                     cmd_list.append(cmd)
@@ -45,13 +63,16 @@ for t in tscales:
     print("\n{} runs\n".format(count))
 
     # make the slurm script
-    job_name = "{}_{}_{}".format("_".join(d.split(".")),n,t)
+    job_name = "{}_{}_{}{}".format("_".join(d.split(".")),n,t,job_suffix)
     slurm_name = "{}.slurm".format(job_name)
 
     if t==3:
         _max_hours = max_hours*2
     else:
         _max_hours = max_hours
+
+    if _max_hours>240:
+        _max_hours = 240
         
     slurm_script="""#!/bin/bash \
 
@@ -64,8 +85,10 @@ for t in tscales:
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=james.robinson@ed.ac.uk
 
-. /usr/local/anaconda/3.9/etc/profile.d/conda.sh
-conda activate rubin
+# . /usr/local/anaconda/3.9/etc/profile.d/conda.sh
+# conda activate rubin
+source /home/jrobinson/miniconda3/etc/profile.d/conda.sh
+conda activate rubin2
 cd {}
 
 {}\nwait""".format(job_name,count,_max_hours,count*mem_per_task,run_dir,"\n".join(cmd_list))

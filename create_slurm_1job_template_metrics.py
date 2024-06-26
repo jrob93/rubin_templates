@@ -71,8 +71,10 @@ for t in tscales:
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=james.robinson@ed.ac.uk
 
-. /usr/local/anaconda/3.9/etc/profile.d/conda.sh
-conda activate rubin
+# . /usr/local/anaconda/3.9/etc/profile.d/conda.sh
+# conda activate rubin
+source /home/jrobinson/miniconda3/etc/profile.d/conda.sh
+conda activate rubin2
 cd {}
 
 {}\nwait""".format(job_name,count,_max_hours,count*mem_per_task,run_dir,"\n".join(cmd_list))
