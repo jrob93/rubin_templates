@@ -7,7 +7,7 @@ ls ../*/*.db > visit_db_list.txt
 
 # create the ss_script.sh file for each db
 # also add the relevant lines from ss_script_header.txt required to run on cuillin
-# 1st cmd line arg: population to run ss_metrics on
+# 1st cmd line arg: population to run ss_metrics on: mba_5k, l7_5k, granvik_5k, granvik_pha_5k, occ_rmax5_5k, occ_rmax20_5k
 # 2nd cmd line arg: a db keyword to select a particular set of dbs (e.g. baseline_v3_2 searches *baseline_v3_2*.db)
 ./gen_ss_script.sh
 
