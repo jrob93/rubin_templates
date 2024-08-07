@@ -1,42 +1,28 @@
 import numpy as np
 
 # base_cmd = "python -u template_metrics.py"
-# job_suffix = "_baseline"
-# db_list = ["baseline_v3.4_10yrs.db"]
-# nside_list = [256]
-# tscales = [3]
-# runs = ["baseline"]
-
-# base_cmd = "python -u template_metrics.py"
-# job_suffix = "_baseline_time"
-# db_list = ["baseline_v3.4_10yrs.db"]
-# nside_list = [256]
-# tscales = [3,7]
-# runs = ["baseline_time"]
-
-# base_cmd = "python -u template_metrics_n_visits_4.py"
-# job_suffix = "_n_visits_4_metrics"
+# job_suffix = "_metrics"
 # db_list = ["baseline_v3.4_10yrs.db"]
 # nside_list = [256]
 # tscales = [3,7,14,28]
 # runs = ["metrics"]
 
-# base_cmd = "python -u template_metrics_n_visits_4.py"
-# job_suffix = "_n_visits_4_visits"
+# base_cmd = "python -u template_metrics.py"
+# job_suffix = "_visits"
 # db_list = ["baseline_v3.4_10yrs.db"]
 # nside_list = [256]
 # tscales = [3,7,14,28]
 # runs = ["visits"]
 
-# base_cmd = "python -u template_metrics_n_visits_4_override-g.py"
-# job_suffix = "_n_visits_4_override-g_metrics"
+# base_cmd = "python -u template_metrics_override-g.py"
+# job_suffix = "_override-g_metrics"
 # db_list = ["baseline_v3.4_10yrs.db"]
 # nside_list = [256]
 # tscales = [3,28]
 # runs = ["metrics"]
 
-base_cmd = "python -u template_metrics_n_visits_4_override-g.py"
-job_suffix = "_n_visits_4_override-g_visits"
+base_cmd = "python -u template_metrics_override-g.py"
+job_suffix = "_override-g_visits"
 db_list = ["baseline_v3.4_10yrs.db"]
 nside_list = [256]
 tscales = [3,28]

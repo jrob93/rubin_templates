@@ -101,8 +101,8 @@ night_max = 365
 override_filter = ["g"]
 
 # how many images required for templates?
-n_visits_for_template = 3.
-# n_visits_for_template = 4.
+# n_visits_for_template = 3.
+n_visits_for_template = 4.
 
 # set up spatial slicer with nside
 s_hp = maf.HealpixSlicer(nside=nside)

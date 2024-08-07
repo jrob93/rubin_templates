@@ -37,10 +37,13 @@ night_max = 365
 # db_files = glob.glob("remove_no_template_results_256_first_year_baseline_v3_3_10yrs_db_noDD_noTwi/*visit_cut_t-*.db")
 # db_files = glob.glob("remove_no_template_results*baseline_v3_3*override*/*visit_cut*.db")
 # db_files = glob.glob("remove_no_template_results*baseline_v3_3*n_visits_4*/*visit_cut*.db")
-db_files = glob.glob("remove_no_template_results*baseline_v3_3*override-g_n_visits_4*/*visit_cut*.db")
+# db_files = glob.glob("remove_no_template_results*baseline_v3_3*override-g_n_visits_4*/*visit_cut*.db")
+# db_files = glob.glob("remove_no_template_results*baseline_v3_4*n_visits_4*/*visit_cut*.db")
+db_files = glob.glob("remove_no_template_results*baseline_v3_4*/*visit_cut*.db")
+
 # db_files = [x for x in db_files if "frac" not in x]
 # db_files = [x for x in db_files if "frac" not in x and "noDD_noTwi" in x]
-db_files = [x for x in db_files if "frac" not in x and "noDD" in x and "v3_3" in x]
+db_files = [x for x in db_files if "frac" not in x and "noDD" in x and "v3_4" in x and "n_visits_4" not in x]
 print(db_files)
 # exit()
 

@@ -144,3 +144,4 @@ Single_point_viz/test
 visit_db_list*.txt
 analysis_metric_bundles*
 cuillin_backup.sh
+*.npz
