@@ -150,7 +150,8 @@ def load_template_metric(runName,
     
 def skymap_plot_Night(metric_plot, title, 
                       template_nights,
-                      _min=None, _max=None):
+                      _min=None, _max=None,
+                      fix_cbar_ticks=None):
 
     #plot the skymap
     x = hp.mollview(metric_plot, title=title, 
@@ -166,10 +167,10 @@ def skymap_plot_Night(metric_plot, title,
     cbar = fig.colorbar(image, ax=ax, orientation = "horizontal", shrink = 0.5, location = "bottom",
                        pad = 0.05)
 
-#     # fix the ticks at 0 nights and at the end?
-#     ticks = template_nights[:-1]
-#     cbar.set_ticks(ticks)
-#     cbar.set_ticklabels(ticks)
+    if fix_cbar_ticks:
+        # fix the ticks at 0 nights and at the end?
+        ticks = cbar.ax.get_xticks()[:-1]
+        cbar.set_ticks(ticks)
     
     # set vmin, vmax to get constant scale for comparision?
 
@@ -178,10 +179,14 @@ def skymap_plot_Night(metric_plot, title,
     
     plt.show()
 
-def skymap_plot(metric_plot, title):
+def skymap_plot(metric_plot, title, fname = None, 
+                vmin = None, vmax = None,
+                labels = None,
+                fix_cbar_ticks=None):
 
     #plot the skymap
     x = hp.mollview(metric_plot, title=title, 
+                    min = vmin, max = vmax,
                     cbar = None)
     hp.graticule()
 
@@ -190,21 +195,103 @@ def skymap_plot(metric_plot, title):
     ax = plt.gca()
     image = ax.get_images()[0]
     # cbar = fig.colorbar(image, ax=ax, orientation = "horizontal",aspect = 30, location = "bottom")
+    if vmax:
+        extend="max"
+    else:
+        extend=None
     cbar = fig.colorbar(image, ax=ax, orientation = "horizontal", shrink = 0.5, location = "bottom",
+                        extend = extend,
                        pad = 0.05)
+    
+    if labels:
+        # plt.figtext(0.51, 0.46, r'WFD', fontsize='xx-large', fontweight='bold')
+        # plt.figtext(0.3, 0.6, r'NES', fontsize='xx-large', fontweight='bold')
+        # plt.figtext(0.72, 0.42, r'GP', fontsize='xx-large', fontweight='bold')
+        # plt.figtext(0.55, 0.26, r'SCP', fontsize='xx-large', fontweight='bold')
+        # plt.figtext(0.36, 0.36, r'DDF', fontsize='xx-large', fontweight='bold')
 
-#     fname = "{}.png".format("".join(title.split(" ")))
-#     plt.savefig(fname, facecolor="w", transparent=True, bbox_inches="tight")
+        # plt.figtext(0.51, 0.45, 'Low-dust\n WFD', fontsize='x-large', fontweight='bold', color='black')
+        # plt.figtext(0.28, 0.6, 'NES', fontsize='x-large', fontweight='bold', color='black')
+        # plt.figtext(0.71, 0.41, 'GP\n WFD', fontsize='x-large', fontweight='bold', color='black')
+        # plt.figtext(0.18, 0.4, 'Dusty\n Plane', fontsize='x-large', fontweight='bold', color='black')
+        # plt.figtext(0.55, 0.26, 'SCP', fontsize='x-large', fontweight='bold', color='black')
+        # plt.figtext(0.36, 0.38, 'DDFs', fontsize='x-large', fontweight='bold', color='black')
+        # plt.figtext(0.9, 0.63, "Virgo", fontsize='x-large', fontweight='bold', color='black')
+
+        for x in labels.keys():
+            hp.projtext(labels[x]["ra"],labels[x]["dec"],x,
+                        fontsize='x-large', fontweight='bold', 
+                        color='black',
+                        lonlat=True)
+
+    if fix_cbar_ticks:
+        # fix the ticks at 0 nights and at the end?
+        ticks = cbar.ax.get_xticks()
+        x = image._A
+        x.fill_value = np.nan
+        if vmax:
+            ticks = ticks[(ticks>np.nanmin(x)) & (ticks<np.nanmax(vmax))]
+        else:        
+            ticks = ticks[(ticks>np.nanmin(x)) & (ticks<np.nanmax(x))]
+        cbar.set_ticks(ticks)
+
+    if fname:
+        plt.savefig(fname, facecolor="w", transparent=True, bbox_inches="tight")
 
     plt.show()
 
-def histogram_plot(metric_plot,bins="auto",title="hist_plot",pix_area=None):
+def skymap_plot_projview(metric_plot, title, fname = None, 
+                         projection_type = "aitoff",
+                vmin = None, vmax = None,
+                labels = None):
+
+    #plot the skymap
+    x = hp.projview(metric_plot, title=title, 
+                    projection_type = projection_type,
+                    min = vmin, max = vmax,
+                    cbar = None)
+    hp.graticule()
+
+    # customise the colorbar
+    fig = plt.gcf()
+    ax = plt.gca()
+    # image = ax.get_images()[0]
+    image = ax._current_image
+    # cbar = fig.colorbar(image, ax=ax, orientation = "horizontal",aspect = 30, location = "bottom")
+    if vmax:
+        extend="max"
+    else:
+        extend=None
+    cbar = fig.colorbar(image, ax=ax, orientation = "horizontal", shrink = 0.5, location = "bottom",
+                        extend = extend,
+                       pad = 0.05)
+    
+    if labels:
+        for x in labels.keys():
+            hp.projtext(labels[x]["ra"],labels[x]["dec"],x,
+                        fontsize='x-large', fontweight='bold', 
+                        color='black',
+                        lonlat=True)
+
+
+    if fname:
+        plt.savefig(fname, facecolor="w", transparent=True, bbox_inches="tight")
+
+    plt.show()
+
+def histogram_plot(metric_plot,bins="auto",title="hist_plot",pix_area=None, fname=None,
+                   log_y = None
+                   ):
     
     fig = plt.figure()
     gs = gridspec.GridSpec(1,1)
     ax1 = plt.subplot(gs[0,0])
 
-    n,b,p = ax1.hist(metric_plot, bins = bins, histtype = "step")
+#     n,b,p = ax1.hist(metric_plot, bins = bins, histtype = "step")
+
+    bins = np.arange(np.amin(metric_plot),np.amax(metric_plot)+1)
+    print(bins)
+    n,b,p = ax1.hist(metric_plot, bins = bins)
 
     # ax1.axvline(np.median(data),c="C{}".format(i))
 
@@ -222,8 +309,14 @@ def histogram_plot(metric_plot,bins="auto",title="hist_plot",pix_area=None):
     else:
         ax1.set_ylabel("number of healpixels")
 
+    if log_y:
+        ax1.set_yscale("log")
+
     ax1.set_xlabel("metric number")
 
     plt.title(title)
 
+    if fname:
+        plt.savefig(fname, facecolor="w", transparent=True, bbox_inches="tight")
+        
     plt.show()
